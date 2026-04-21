@@ -7,13 +7,20 @@ CREATE TABLE users (
 
 CREATE TABLE roadmaps (
     id TEXT PRIMARY KEY,
+    role_name TEXT UNIQUE NOT NULL,
+    roadmap_data TEXT NOT NULL 
+);
+
+CREATE TABLE user_roadmaps (
+    id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    role_name TEXT NOT NULL, 
-    roadmap_data TEXT NOT NULL, 
+    roadmap_id TEXT NOT NULL,
+    roadmap_data TEXT NOT NULL,
     current_module_id INTEGER DEFAULT 1,
     status TEXT DEFAULT 'active',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (roadmap_id) REFERENCES roadmaps(id)
 );
 
 CREATE TABLE chatbot_threads (
@@ -35,5 +42,5 @@ CREATE TABLE evaluations (
     ai_feedback TEXT, 
     transcript_data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (roadmap_id) REFERENCES roadmaps(id) ON DELETE CASCADE
+    FOREIGN KEY (roadmap_id) REFERENCES user_roadmaps(id) ON DELETE CASCADE
 );
