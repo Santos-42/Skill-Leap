@@ -181,6 +181,7 @@ export class InterviewManager {
 
   // Websocket Live AI
   async connect() {
+    this.transcript = [];
     const key = env.PUBLIC_Gemini_LiveAPI;
 
     if (!key) {
@@ -402,15 +403,12 @@ export class InterviewManager {
     this.ws = null;
     this.player.destroy();
     this.connectionState = 'idle';
-    this.statusText = 'Menunggu koneksi...';
-    this.transcript = [];
+    this.statusText = 'Wawancara dihentikan.';
   }
 }
 
-/* ==========================================
-   5. WORKLET: Processor Audio (Inline)
-   ========================================== */
 
+// Processor untuk merekam audio
 const AUDIO_WORKLET_SCRIPT = `
 class AudioRecordingWorklet extends AudioWorkletProcessor {
   buffer = new Int16Array(${CONFIG.BUFFER});
