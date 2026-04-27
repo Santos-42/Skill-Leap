@@ -83,16 +83,16 @@
               <div class="space-y-2">
                 <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
                   <span>Progress</span>
-                  <span>{Math.round((roadmap.completed_modules / roadmap.total_modules) * 100)}%</span>
+                  <span>{Math.min(100, Math.round((roadmap.completed_modules / roadmap.total_modules) * 100))}%</span>
                 </div>
                 <div class="h-3 bg-gray-100 rounded-full overflow-hidden p-0.5">
                   <div 
                     class="h-full bg-blue-600 rounded-full transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(37,99,235,0.4)]"
-                    style="width: {(roadmap.completed_modules / roadmap.total_modules) * 100}%"
+                    style="width: {Math.min(100, (roadmap.completed_modules / roadmap.total_modules) * 100)}%"
                   ></div>
                 </div>
                 <div class="flex justify-between text-[10px] text-gray-400">
-                  <span>{roadmap.completed_modules} dari {roadmap.total_modules} modul</span>
+                  <span>{Math.min(roadmap.completed_modules, roadmap.total_modules)} dari {roadmap.total_modules} modul</span>
                   <span class="font-bold {roadmap.status === 'active' ? 'text-blue-600' : 'text-green-600'}">{roadmap.status.toUpperCase()}</span>
                 </div>
               </div>

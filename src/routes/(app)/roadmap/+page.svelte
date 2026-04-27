@@ -1,11 +1,12 @@
 <script lang="ts">
   import AIChat from "$lib/components/AIChat.svelte";
   import { onMount } from "svelte";
-  import { Sparkles, ArrowRight, BookOpen, Compass } from "lucide-svelte";
+  import { Sparkles, ArrowRight, BookOpen, Compass, Play, Lock } from "lucide-svelte";
   import { fade, slide, scale } from "svelte/transition";
 
   let { data } = $props();
   let chatOpen = $state(false);
+  let expandedModuleId = $state<string | null>(null);
 
   onMount(() => {
     if (!data.hasRole) {
@@ -97,20 +98,85 @@
       </p>
     </div>
   {:else}
-    <!-- Roadmap Content -->
-    <div
-      class="bg-white rounded-[2.5rem] border-2 border-dashed border-gray-200 min-h-[500px] flex flex-col items-center justify-center p-10"
-    >
-      <div
-        class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6"
-      >
-        <BookOpen class="text-blue-600" size={32} />
+    <!-- Roadmap Timeline -->
+    <div class="space-y-6">
+      <div class="flex items-center space-x-4 mb-6">
+        <div class="p-3 bg-blue-100 text-blue-600 rounded-2xl">
+          <BookOpen size={24} />
+        </div>
+        <div>
+          <h3 class="text-2xl font-black text-gray-800">
+            Roadmap: <span class="text-blue-600">{data.roleName}</span>
+          </h3>
+          <p class="text-gray-500 text-sm">Ikuti langkah-langkah di bawah untuk menguasai skill ini</p>
+        </div>
       </div>
-      <h3 class="text-2xl font-bold text-gray-800 mb-2">Roadmap Aktif</h3>
-      <p class="text-gray-400 max-w-md text-center">
-        Konten roadmap detail sedang dikembangkan. Gunakan AI Chat untuk
-        sementara untuk panduan belajar.
-      </p>
+
+      <div class="relative pl-8 space-y-8">
+        <!-- Vertical Spine -->
+        <div class="absolute left-[1.625rem] top-2 bottom-2 w-0.5 bg-gray-100"></div>
+
+        {#each data.modules as module, i}
+          {@const isExpanded = expandedModuleId === module.id}
+          <div class="relative">
+            <!-- Module Node -->
+            <button 
+              onclick={() => expandedModuleId = isExpanded ? null : module.id}
+              class="absolute -left-8 top-0 w-8 h-8 rounded-full border-4 border-white shadow-md flex items-center justify-center text-xs font-black transition-all z-10
+                {module.is_unlocked ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}"
+            >
+              {i + 1}
+            </button>
+
+            <!-- Module Header -->
+            <div class="flex flex-col">
+              <button 
+                onclick={() => expandedModuleId = isExpanded ? null : module.id}
+                class="flex items-center justify-between text-left group"
+              >
+                <h4 class="text-lg font-bold transition-all group-hover:text-blue-600 
+                  {module.is_unlocked ? 'text-gray-800' : 'text-gray-400'}">
+                  {module.module_name}
+                </h4>
+                <div class="text-gray-400 group-hover:text-blue-600 transition-transform {isExpanded ? 'rotate-180' : ''}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+              </button>
+
+              <!-- Materials List -->
+              {#if isExpanded}
+                <div transition:slide class="mt-4 space-y-3 overflow-hidden">
+                  {#each module.materials as material}
+                    {#if material.is_locked}
+                      <div 
+                        class="flex items-center space-x-3 p-3 rounded-2xl bg-gray-100/50 border border-transparent grayscale opacity-50 cursor-not-allowed"
+                      >
+                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-gray-400">
+                          <Lock size={14} />
+                        </div>
+                        <span class="text-sm font-bold text-gray-400">{material.title}</span>
+                      </div>
+                    {:else}
+                      <a 
+                        href="/roadmap/{material.id}"
+                        class="flex items-center space-x-3 p-3 rounded-2xl bg-gray-50 hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all group"
+                      >
+                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm text-blue-500 group-hover:scale-110 transition-transform">
+                          <Play size={14} fill="currentColor" />
+                        </div>
+                        <span class="text-sm font-bold text-gray-700 group-hover:text-blue-600">{material.title}</span>
+                      </a>
+                    {/if}
+                  {/each}
+                  {#if module.materials.length === 0}
+                    <p class="text-xs text-gray-400 italic ml-4">Belum ada materi di modul ini.</p>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>

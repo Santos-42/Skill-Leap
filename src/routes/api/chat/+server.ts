@@ -28,6 +28,31 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
       .bind(roleName)
       .first();
 
+    if (!roadmap) {
+      return json({ 
+        success: true, 
+        text: `Maaf, roadmap untuk peran "**${roleName}**" tidak tersedia atau tidak dikenali oleh sistem.` 
+      });
+    }
+
+    return json({ 
+      success: true, 
+      text: `Apakah Anda yakin ingin mulai belajar dan membuat roadmap untuk **${roleName}**? (Balas 'Ya' untuk melanjutkan)`,
+      action: 'confirm_roadmap',
+      payload: roleName
+    });
+  }
+
+  // 2.1 Logic for "Confirm create roadmap: "
+  if (userMessage.startsWith('Confirm create roadmap: ')) {
+    const roleName = userMessage.replace('Confirm create roadmap: ', '').trim();
+    
+    const roadmap = await platform!.env.DB.prepare(
+      'SELECT id FROM roadmaps WHERE role_name = ?'
+    )
+      .bind(roleName)
+      .first();
+
     if (roadmap) {
       const roadmapId = roadmap.id as string;
       
@@ -62,6 +87,13 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
             .run();
         }
       }
+
+      return json({ 
+        success: true, 
+        text: `Roadmap untuk **${roleName}** berhasil dibuat! Menghubungkan Anda ke dashboard belajar...`,
+        action: 'redirect',
+        url: '/roadmap'
+      });
     }
   }
 

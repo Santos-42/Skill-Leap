@@ -2,6 +2,7 @@
   import { Sparkles, X, Send, PlusCircle } from "lucide-svelte";
   import { fade, scale, slide } from "svelte/transition";
   import { onMount, tick } from "svelte";
+  import { goto } from "$app/navigation";
 
   let { isOpen = $bindable(false) } = $props();
 
@@ -13,6 +14,7 @@
   let showRoadmapDropdown = $state(false);
   let availableRoadmaps = $state<{ id: string; role_name: string }[]>([]);
   let messageContainer: HTMLDivElement | undefined = $state();
+  let pendingRoadmapAction = $state<string | null>(null);
 
   onMount(async () => {
     const res = await fetch('/api/roadmaps');
@@ -46,10 +48,26 @@
   async function sendMessage() {
     if (!inputText.trim() || isLoading) return;
 
-    const userMessage = inputText;
+    let userMessage = inputText;
+    const displayMessage = inputText;
+
+    // Check for confirmation
+    const isConfirmation = pendingRoadmapAction && 
+      (userMessage.toLowerCase() === 'ya' || 
+       userMessage.toLowerCase() === 'y' || 
+       userMessage.toLowerCase() === 'yes');
+
+    if (isConfirmation) {
+      userMessage = `Confirm create roadmap: ${pendingRoadmapAction}`;
+      pendingRoadmapAction = null;
+    } else {
+      // If we had a pending action but user sent something else, reset it
+      pendingRoadmapAction = null;
+    }
+
     inputText = "";
     showRoadmapDropdown = false;
-    messages = [...messages, { role: 'user', text: userMessage }];
+    messages = [...messages, { role: 'user', text: displayMessage }];
     
     isLoading = true;
     try {
@@ -58,12 +76,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userMessage,
-          chatHistory: messages.slice(0, -1)
+          chatHistory: messages.slice(0, -1).map(m => ({ role: m.role, text: m.text }))
         })
       });
 
       if (res.ok) {
         const data = await res.json();
+        
+        // Handle Actions
+        if (data.action === 'confirm_roadmap') {
+          pendingRoadmapAction = data.payload;
+        } else if (data.action === 'redirect') {
+          setTimeout(() => goto(data.url), 1500); // Small delay to let user see the "Success" message
+        }
+
         const fullText = data.text;
         
         // Push empty AI message first

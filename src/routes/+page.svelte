@@ -241,7 +241,7 @@
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <a
-          href="/started"
+          href="/register"
           class="bg-brand-indigo text-white px-8 py-3.5 rounded-xl text-base font-bold hover:bg-brand-indigo/90 transition-all shadow-lg flex items-center gap-2"
         >
           Get Started <ArrowRight size={18} />
@@ -250,7 +250,7 @@
           href="#features"
           class="bg-white/10 backdrop-blur-sm text-gray-200 border border-white/20 px-8 py-3.5 rounded-xl text-base font-bold hover:bg-white/20 transition-all flex items-center gap-2"
         >
-          Pelajari Fitur <Play size={16} class="fill-current" />
+          Pelajari Fitur
         </a>
       </div>
     </div>

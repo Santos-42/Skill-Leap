@@ -6,11 +6,6 @@ export const actions: Actions = {
 	default: async ({ request, platform, cookies }) => {
 		const formData = await request.formData();
 
-		console.log("=== DIAGNOSTIK PRODUKSI ===");
-		console.log("Platform object:", !!platform);
-		console.log("Environment object:", !!platform?.env);
-		console.log("Database D1 (DB):", !!platform?.env?.DB);
-
 		const name = formData.get('name') as string;
 		const email = formData.get('email') as string;
 		const password = formData.get('password') as string;

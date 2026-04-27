@@ -52,6 +52,7 @@ CREATE TABLE user_module_progress (
     module_id TEXT NOT NULL,
     is_unlocked BOOLEAN DEFAULT FALSE,
     unlocked_at DATETIME,
+    current_material_id TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );

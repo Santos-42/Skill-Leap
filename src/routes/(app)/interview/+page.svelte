@@ -21,13 +21,10 @@
   let transcriptContainer: HTMLDivElement | undefined = $state();
 
   $effect(() => {
-    if (data.roles && data.roles.length > 0) {
-      manager.availableRoles = data.roles;
+    if (data.activeRole) {
       manager.availableModules = data.modules;
       manager.userProgress = data.userProgress;
-      if (!manager.selectedRoleId) {
-        manager.selectedRoleId = data.roles[0].id;
-      }
+      manager.selectedRoleId = data.activeRole.id;
     }
   });
 
@@ -105,27 +102,26 @@
           {/each}
         </div>
 
-        <div class="w-full max-w-sm mb-4">
-          <label for="role" class="block text-sm font-bold text-gray-700 mb-2"
-            >Role Interview:</label
-          >
-          <select
-            id="role"
-            bind:value={manager.selectedRoleId}
-            disabled={manager.connectionState !== "idle"}
-            class="w-full bg-gray-50 border-2 border-gray-100 text-gray-700 rounded-xl px-4 py-3 font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all disabled:opacity-50"
-          >
-            {#each data.roles as role}
-              <option value={role.id}>{role.role_name}</option>
-            {/each}
-          </select>
-        </div>
+        {#if data.activeRole}
+          <div class="w-full max-w-sm mb-4 text-center">
+            <p class="text-lg font-bold text-gray-700">
+              Role Interview:
+              <span class="text-blue-600 font-black">{data.activeRole.role_name}</span>
+            </p>
+          </div>
+        {:else}
+          <div class="w-full max-w-sm mb-4 text-center">
+            <p class="text-lg font-bold text-red-500">
+              Anda belum memilih roadmap aktif.
+            </p>
+          </div>
+        {/if}
 
         <div class="flex space-x-4">
           <button
             onclick={() => manager.connect()}
-            disabled={manager.connectionState !== "idle" &&
-              manager.connectionState !== "error"}
+            disabled={!data.activeRole || (manager.connectionState !== "idle" &&
+              manager.connectionState !== "error")}
             class="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100"
           >
             <Play size={20} fill="currentColor" />
