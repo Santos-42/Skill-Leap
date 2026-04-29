@@ -59,7 +59,10 @@
         return;
       }
 
-      if (!res.ok) throw new Error("Gagal mengambil soal dari AI");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || errData.details || "Gagal mengambil soal dari AI");
+      }
       
       currentCase = await res.json();
       currentState = "active";
@@ -190,7 +193,7 @@
                       </p>
                     </div>
                   </div>
-                  <span class="text-blue-600 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">Lihat Detail →</span>
+                  <span class="text-blue-600 text-xs font-bold hover:underline shrink-0">Lihat Detail →</span>
                 </a>
               {/each}
             </div>

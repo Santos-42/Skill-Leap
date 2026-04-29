@@ -20,7 +20,7 @@ export const GET: RequestHandler = async ({ url, platform, locals }) => {
   // Check for active attempt
   const activeAttempt = await db.prepare(
     `SELECT id, expires_at, attempt_number FROM quiz_attempts 
-     WHERE user_id = ? AND module_id = ? AND status = 'active' AND expires_at > datetime('now')
+     WHERE user_id = ? AND module_id = ? AND status = 'active' AND datetime(expires_at) > datetime('now')
      ORDER BY created_at DESC LIMIT 1`
   ).bind(userId, moduleId).first();
 

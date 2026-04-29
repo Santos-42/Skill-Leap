@@ -27,7 +27,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
       // Check cooldown: last FAIL evaluation
       const recentFailed = await db.prepare(
-        `SELECT created_at FROM evaluations
+        `SELECT evaluations.created_at FROM evaluations
          JOIN user_roadmaps ur ON evaluations.user_roadmap_id = ur.id
          WHERE ur.user_id = ? AND evaluations.ai_decision = 'FAIL'
          ORDER BY evaluations.created_at DESC LIMIT 1`
@@ -60,7 +60,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
         });
       }
 
-      // Fallback: generate on-demand
+      // Fallback: generate on-demand with retry
+      let parsed: any = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+
       const prompt = `Anda adalah evaluator profesional untuk posisi ${roleName}.
 Kandidat telah mempelajari modul-modul berikut: ${completedModules || 'Fondasi dasar'}.
 Buatlah 1 skenario mini case / use case realistis yang relevan dengan posisi tersebut.
@@ -68,36 +72,42 @@ Skenario harus cukup detail untuk menguji pemahaman kandidat secara praktis.
 Di akhir skenario, berikan 1 pertanyaan esai spesifik yang meminta kandidat menjelaskan solusi atau pendekatannya.
 Format output HARUS berupa JSON valid dengan struktur: { "caseStudy": "...", "question": "..." }`;
 
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-v4-flash',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' }
-        })
-      });
+      while (retryCount <= maxRetries) {
+        try {
+          const response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'deepseek-v4-flash',
+              messages: [{ role: 'user', content: prompt }],
+              response_format: { type: 'json_object' }
+            })
+          });
 
-      const data = await response.json();
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('DeepSeek generate response missing content:', JSON.stringify(data));
-        return json({ error: 'Gagal generate evaluasi: respons AI tidak valid' }, { status: 502 });
-      }
+          const data = await response.json();
+          if (!data.choices?.[0]?.message?.content) {
+            throw new Error('Respons AI tidak valid');
+          }
 
-      try {
-        const parsed = JSON.parse(data.choices[0].message.content);
-        if (!parsed.caseStudy || !parsed.question) {
-          console.error('DeepSeek generate response invalid structure:', data.choices[0].message.content);
-          return json({ error: 'Gagal generate evaluasi: format respons tidak sesuai' }, { status: 502 });
+          parsed = JSON.parse(data.choices[0].message.content);
+          if (!parsed.caseStudy || !parsed.question) {
+            throw new Error('Format respons tidak sesuai');
+          }
+          break;
+        } catch (err: any) {
+          retryCount++;
+          if (retryCount > maxRetries) {
+            console.error('DeepSeek generate evaluation failed after retries:', err.message);
+            return json({ error: 'Gagal generate evaluasi: ' + (err.message || 'silakan coba lagi') }, { status: 502 });
+          }
+          await new Promise(r => setTimeout(r, 1000));
         }
-        return json(parsed);
-      } catch (parseErr) {
-        console.error('DeepSeek generate JSON parse error:', data.choices[0].message.content, parseErr);
-        return json({ error: 'Gagal generate evaluasi: gagal parsing respons AI' }, { status: 502 });
       }
+
+      return json(parsed);
 
     } else if (action === 'evaluate') {
       const prompt = `Anda adalah evaluator profesional untuk posisi ${roleName}.
@@ -116,35 +126,43 @@ Format output HARUS berupa JSON valid dengan struktur:
   "improvements": "..."
 }`;
 
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'deepseek-v4-flash',
-          messages: [{ role: 'user', content: prompt }],
-          response_format: { type: 'json_object' }
-        })
-      });
+      let evaluation: any = null;
+      let retryCountEval = 0;
+      const maxRetriesEval = 2;
 
-      const data = await response.json();
-      if (!data.choices?.[0]?.message?.content) {
-        console.error('DeepSeek evaluate response missing content:', JSON.stringify(data));
-        return json({ error: 'Gagal evaluasi: respons AI tidak valid' }, { status: 502 });
-      }
+      while (retryCountEval <= maxRetriesEval) {
+        try {
+          const response = await fetch('https://api.deepseek.com/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: 'deepseek-v4-flash',
+              messages: [{ role: 'user', content: prompt }],
+              response_format: { type: 'json_object' }
+            })
+          });
 
-      let evaluation: any;
-      try {
-        evaluation = JSON.parse(data.choices[0].message.content);
-        if (typeof evaluation.score !== 'number' || !evaluation.decision) {
-          console.error('DeepSeek evaluate response invalid structure:', data.choices[0].message.content);
-          return json({ error: 'Gagal evaluasi: format respons tidak sesuai' }, { status: 502 });
+          const data = await response.json();
+          if (!data.choices?.[0]?.message?.content) {
+            throw new Error('Respons AI tidak valid');
+          }
+
+          evaluation = JSON.parse(data.choices[0].message.content);
+          if (typeof evaluation.score !== 'number' || !evaluation.decision) {
+            throw new Error('Format respons tidak sesuai');
+          }
+          break;
+        } catch (err: any) {
+          retryCountEval++;
+          if (retryCountEval > maxRetriesEval) {
+            console.error('DeepSeek evaluate failed after retries:', err.message);
+            return json({ error: 'Gagal evaluasi: ' + (err.message || 'silakan coba lagi') }, { status: 502 });
+          }
+          await new Promise(r => setTimeout(r, 1000));
         }
-      } catch (parseErr) {
-        console.error('DeepSeek evaluate JSON parse error:', data.choices[0].message.content, parseErr);
-        return json({ error: 'Gagal evaluasi: gagal parsing respons AI' }, { status: 502 });
       }
 
       // 1. Get user_roadmap_id

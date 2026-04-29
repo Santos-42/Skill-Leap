@@ -184,7 +184,7 @@
                     <p class="text-xs text-gray-400 italic ml-4">Belum ada materi di modul ini.</p>
                   {/if}
 
-                  <!-- Quiz CTA -->
+                  <!-- Quiz CTA - When not yet passed but checkpoints done -->
                   {#if module.allCheckpointsPassed && module.is_unlocked && !module.quizPassed}
                     <a
                       href="/roadmap/{module.id}/quiz"
@@ -192,6 +192,18 @@
                     >
                       <FileText size={18} />
                       <span>Quiz Akhir Modul</span>
+                      <ArrowRight size={16} class="group-hover:translate-x-1 transition-transform" />
+                    </a>
+                  {/if}
+
+                  <!-- Quiz Review - When already passed -->
+                  {#if module.quizPassed && module.quizAttemptId}
+                    <a
+                      href="/roadmap/{module.id}/quiz/review/{module.quizAttemptId}"
+                      class="flex items-center justify-center space-x-3 p-4 mt-3 rounded-2xl bg-green-600 hover:bg-green-700 text-white font-bold transition-all shadow-lg shadow-green-200 group"
+                    >
+                      <FileText size={18} />
+                      <span>Review Quiz</span>
                       <ArrowRight size={16} class="group-hover:translate-x-1 transition-transform" />
                     </a>
                   {/if}
@@ -211,4 +223,4 @@
   {/if}
 </div>
 
-<AIChat bind:isOpen={chatOpen} />
+<AIChat bind:isOpen={chatOpen} hasActiveRoadmap={data.hasRole} />

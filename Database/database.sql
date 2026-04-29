@@ -82,7 +82,7 @@ CREATE TABLE evaluations (
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
--- 9. Tabel Quiz Attempts (Sumber Kebenaran Utama - Server-Side Grading)
+-- 9. Tabel Quiz Attempts
 CREATE TABLE quiz_attempts (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE quiz_attempts (
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
 
--- 10. Tabel Quiz Results (Bukti Kelulusan Modul)
+-- 10. Tabel Quiz Results
 CREATE TABLE quiz_results (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,

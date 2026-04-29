@@ -88,7 +88,7 @@
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
           if (!result && !submitting) {
-            submitQuiz();
+            submitQuiz(true);
           }
         }
       }, 1000);
@@ -112,6 +112,7 @@
       if (cooldown <= 0) {
         clearInterval(cooldownInterval);
         cooldown = 0;
+        initQuiz();
       }
     }, 1000);
   }
@@ -127,9 +128,9 @@
     answers = { ...answers, [questionIndex]: optionIndex };
   }
 
-  async function submitQuiz() {
+  async function submitQuiz(isTimeout = false) {
     if (!attemptId) return;
-    if (Object.keys(answers).length < questions.length) {
+    if (!isTimeout && Object.keys(answers).length < questions.length) {
       error = 'Silakan jawab semua pertanyaan terlebih dahulu';
       return;
     }
@@ -187,16 +188,8 @@
       <ArrowLeft size={20} class="group-hover:-translate-x-1 transition-transform" />
       <span>Kembali ke Roadmap</span>
     </a>
-    <div class="flex items-center space-x-3">
-      {#if !result && timeLeft > 0}
-        <div class="flex items-center space-x-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-bold">
-          <Clock size={16} />
-          <span>{formatTime(timeLeft)}</span>
-        </div>
-      {/if}
-      <div class="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-wider">
-        Quiz Akhir Modul
-      </div>
+    <div class="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-wider">
+      Quiz Akhir Modul
     </div>
   </div>
 
@@ -233,9 +226,16 @@
             <p class="text-5xl font-black text-blue-600">{result.score}/100</p>
           </div>
           <div class="flex flex-col items-center space-y-3">
-            <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
-              Kembali ke Roadmap
-            </a>
+            <div class="flex items-center gap-4">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+                Kembali ke Roadmap
+              </a>
+              {#if data.nextModuleFirstMaterialId}
+                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-xl shadow-green-200">
+                  Lanjut ke Materi Selanjutnya
+                </a>
+              {/if}
+            </div>
             {#if attemptId}
               <a href="/roadmap/{data.moduleId}/quiz/review/{attemptId}" class="text-blue-600 font-bold hover:underline text-sm">
                 Lihat Review Jawaban
@@ -255,9 +255,16 @@
             <p class="text-sm text-gray-500 mt-2">{result.correctCount} dari {result.totalQuestions} benar</p>
           </div>
           <div class="flex flex-col items-center space-y-3">
-            <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
-              Kembali ke Roadmap
-            </a>
+            <div class="flex items-center gap-4">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+                Kembali ke Roadmap
+              </a>
+              {#if data.nextModuleFirstMaterialId}
+                <a href="/roadmap/{data.nextModuleFirstMaterialId}" class="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-xl shadow-green-200">
+                  Lanjut ke Materi Selanjutnya
+                </a>
+              {/if}
+            </div>
             {#if attemptId}
               <a href="/roadmap/{data.moduleId}/quiz/review/{attemptId}" class="text-blue-600 font-bold hover:underline text-sm">
                 Lihat Review Jawaban
@@ -282,16 +289,30 @@
             <p class="text-amber-600 text-sm mt-1">Silakan pelajari ulang materi sebelum mencoba lagi</p>
           </div>
           {#if cooldown <= 0}
-            <button onclick={initQuiz} class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
-              Coba Lagi
-            </button>
+            <div class="flex items-center gap-4">
+              <button onclick={initQuiz} class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+                Coba Lagi
+              </button>
+              {#if data.lastMaterialId}
+                <a href="/roadmap/{data.lastMaterialId}" class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-bold hover:border-blue-500 hover:text-blue-600 transition-all">
+                  Kembali ke Materi
+                </a>
+              {/if}
+            </div>
           {:else}
-            <a href="/roadmap" class="text-blue-600 font-bold hover:underline">
-              Kembali ke Roadmap
-            </a>
+            <div class="flex items-center gap-4">
+              <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+                Kembali ke Roadmap
+              </a>
+              {#if data.lastMaterialId}
+                <a href="/roadmap/{data.lastMaterialId}" class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-bold hover:border-blue-500 hover:text-blue-600 transition-all">
+                  Kembali ke Materi
+                </a>
+              {/if}
+            </div>
           {/if}
           {#if attemptId}
-            <a href="/roadmap/{data.moduleId}/quiz/review/{attemptId}" class="text-blue-600 font-bold hover:underline text-sm mt-4">
+            <a href="/roadmap/{data.moduleId}/quiz/review/{attemptId}" class="text-blue-600 font-bold hover:underline text-sm mt-2">
               Lihat Review Jawaban
             </a>
           {/if}
@@ -306,18 +327,40 @@
         <p class="text-gray-500 mt-2">Silakan tunggu sebelum bisa mengambil quiz lagi</p>
         <p class="text-5xl font-black text-amber-600 mt-4">{formatTime(cooldown)}</p>
       </div>
-      <a href="/roadmap" class="text-blue-600 font-bold hover:underline">
-        Kembali ke Roadmap
-      </a>
+      <div class="flex flex-col items-center space-y-3">
+        <div class="flex items-center gap-4">
+          <a href="/roadmap" class="bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-200">
+            Kembali ke Roadmap
+          </a>
+          {#if data.lastMaterialId}
+            <a href="/roadmap/{data.lastMaterialId}" class="bg-white border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-2xl font-bold hover:border-blue-500 hover:text-blue-600 transition-all">
+              Kembali ke Materi
+            </a>
+          {/if}
+        </div>
+        {#if data.latestAttemptId}
+          <a href="/roadmap/{data.moduleId}/quiz/review/{data.latestAttemptId}" class="text-blue-600 font-bold hover:underline text-sm mt-4">
+            Lihat Review Jawaban
+          </a>
+        {/if}
+      </div>
     </div>
   {:else}
     <!-- Quiz View -->
     <div class="space-y-6" in:fade>
-      <!-- Progress Bar -->
-      <div class="bg-white rounded-[2.5rem] p-6 border border-gray-100 shadow-sm">
+      <!-- Progress Bar (sticky with timer) -->
+      <div class="bg-white/90 backdrop-blur-md rounded-[2.5rem] p-6 border border-gray-100 shadow-md sticky top-[10px] z-50">
         <div class="flex justify-between items-center mb-3">
-          <h2 class="text-xl font-black text-gray-800">{data.moduleName}</h2>
-          <span class="text-sm text-gray-400 font-bold">Attempt #{attemptNumber}</span>
+          <div>
+            <h2 class="text-xl font-black text-gray-800">{data.moduleName}</h2>
+            <span class="text-sm text-gray-400 font-bold">Attempt #{attemptNumber}</span>
+          </div>
+          {#if timeLeft > 0}
+            <div class="flex items-center space-x-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-full text-sm font-bold">
+              <Clock size={16} />
+              <span>{formatTime(timeLeft)}</span>
+            </div>
+          {/if}
         </div>
         <div class="flex justify-between text-xs text-gray-400 mb-2">
           <span>Progress</span>

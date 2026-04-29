@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { Lock, CheckCircle, AlertTriangle, Loader2, Clock } from "lucide-svelte";
+  import { Lock, CheckCircle, AlertTriangle, Loader2, Clock, BookOpen } from "lucide-svelte";
   import { fade } from "svelte/transition";
 
-  let { materialId, onPass } = $props<{ materialId: string; onPass: () => void }>();
+  let { materialId, onPass, alreadyPassed = false } = $props<{ materialId: string; onPass: () => void; alreadyPassed?: boolean }>();
 
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -10,6 +10,8 @@
   let question = $state<string | null>(null);
   let hint = $state<string | null>(null);
   let passed = $state(false);
+  let isSuccess = $state(false);
+  let lastUserAnswer = $state('');
   let cooldown = $state(0);
   let answer = $state('');
   let verifying = $state(false);
@@ -18,6 +20,14 @@
   let cooldownInterval: ReturnType<typeof setInterval>;
 
   async function initCheckpoint() {
+    if (alreadyPassed) {
+      passed = true;
+      isSuccess = true;
+      loading = false;
+      onPass();
+      return;
+    }
+
     loading = true;
     error = null;
 
@@ -32,6 +42,7 @@
 
       if (data.alreadyPassed) {
         passed = true;
+        isSuccess = true;
         loading = false;
         onPass();
         return;
@@ -96,9 +107,12 @@
 
       if (data.passed) {
         passed = true;
+        isSuccess = true;
+        lastUserAnswer = answer.trim();
         resultMessage = data.reason || 'Jawaban benar!';
         onPass();
       } else {
+        lastUserAnswer = answer.trim();
         cooldown = data.cooldownRemaining || 60;
         hint = data.reason || null;
         resultMessage = data.reason;
@@ -123,12 +137,18 @@
 
 <div class="bg-white rounded-[2.5rem] p-8 border-2 border-gray-100 space-y-6" in:fade>
   <div class="flex items-center space-x-3">
-    <div class="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center">
-      <Lock size={20} class="text-orange-500" />
+    <div class="w-10 h-10 rounded-2xl flex items-center justify-center {isSuccess ? 'bg-green-50' : 'bg-orange-50'}">
+      {#if isSuccess}
+        <CheckCircle size={20} class="text-green-500" />
+      {:else}
+        <Lock size={20} class="text-orange-500" />
+      {/if}
     </div>
     <div>
       <h3 class="font-black text-gray-800">Micro-Checkpoint</h3>
-      <p class="text-sm text-gray-500">Jawab pertanyaan ini untuk melanjutkan ke materi berikutnya</p>
+      <p class="text-sm text-gray-500">
+        {isSuccess ? 'Checkpoint telah berhasil dilewati' : 'Jawab pertanyaan ini untuk melanjutkan ke materi berikutnya'}
+      </p>
     </div>
   </div>
 
@@ -145,7 +165,7 @@
         Coba Lagi
       </button>
     </div>
-  {:else if passed}
+  {:else if isSuccess}
     <div class="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
       <div class="flex items-center space-x-3">
         <CheckCircle size={20} class="text-green-500" />
@@ -156,20 +176,29 @@
           {/if}
         </div>
       </div>
-      <a href="/roadmap/checkpoint-review/{materialId}" class="text-green-600 text-xs font-bold hover:underline shrink-0">
-        Lihat Riwayat
-      </a>
+      <div class="flex items-center space-x-3">
+        <a href="/roadmap/checkpoint-review/{materialId}" class="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5">
+          <BookOpen size={14} />
+          <span>Review Jawaban & Soal</span>
+        </a>
+      </div>
     </div>
   {:else if cooldown > 0}
     <div class="space-y-4">
-      <div class="flex items-center space-x-3 p-4 bg-amber-50 rounded-2xl border border-amber-200">
-        <Clock size={20} class="text-amber-600" />
-        <div>
-          <p class="text-amber-700 font-bold">Cooldown: {formatTime(cooldown)}</p>
-          {#if hint}
-            <p class="text-amber-600 text-sm mt-1">Hint: {hint}</p>
-          {/if}
+      <div class="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-200">
+        <div class="flex items-center space-x-3">
+          <Clock size={20} class="text-amber-600" />
+          <div>
+            <p class="text-amber-700 font-bold">Cooldown: {formatTime(cooldown)}</p>
+            {#if hint}
+              <p class="text-amber-600 text-sm mt-1">Hint: {hint}</p>
+            {/if}
+          </div>
         </div>
+        <a href="/roadmap/checkpoint-review/{materialId}" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold transition-colors flex items-center space-x-1.5 shrink-0">
+          <BookOpen size={14} />
+          <span>Review Jawaban & Soal</span>
+        </a>
       </div>
     </div>
   {:else}

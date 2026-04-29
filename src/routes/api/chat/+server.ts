@@ -20,6 +20,15 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 
   // 2. Logic for "Create roadmap: "
   if (userMessage.startsWith('Create roadmap: ')) {
+    // Prevent creating roadmap if user already has one
+    if (userRoadmaps && userRoadmaps.length > 0) {
+      const existingRole = (userRoadmaps[0] as any).role_name;
+      return json({
+        success: true,
+        text: `Anda sudah memiliki roadmap aktif untuk **${existingRole}**. Anda hanya dapat memiliki satu roadmap dalam satu waktu.`
+      });
+    }
+
     const roleName = userMessage.replace('Create roadmap: ', '').trim();
     
     const roadmap = await platform!.env.DB.prepare(

@@ -4,7 +4,7 @@
   import { onMount, tick } from "svelte";
   import { goto, invalidateAll } from "$app/navigation";
 
-  let { isOpen = $bindable(false) } = $props();
+  let { isOpen = $bindable(false), hasActiveRoadmap = false } = $props();
 
   let messages = $state<{ role: 'ai' | 'user'; text: string }[]>([
     { role: 'ai', text: "Hello! Saya AI Mentor Anda. Bagaimana saya bisa membantu perjalanan karir Anda hari ini?" }
@@ -206,7 +206,11 @@
       <div class="px-4 py-2 bg-gray-50 flex justify-start">
         <button 
           onclick={handleCreateRoadmap}
-          class="flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 px-3 py-1 rounded-full"
+          disabled={hasActiveRoadmap}
+          class="flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider transition-colors px-3 py-1 rounded-full
+            {hasActiveRoadmap 
+              ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+              : 'text-blue-600 hover:text-blue-700 bg-blue-50'}"
         >
           <PlusCircle size={12} />
           <span>Create Roadmap</span>

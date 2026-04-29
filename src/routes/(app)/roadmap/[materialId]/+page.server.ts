@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
 
   // 3. Fetch all materials in this roadmap for navigation
   const { results: allMaterials } = await platform!.env.DB.prepare(
-    `SELECT m.id, m.content_text 
+    `SELECT m.id, m.content_text, m.module_id 
      FROM materials m 
      JOIN modules mod ON m.module_id = mod.id 
      WHERE mod.roadmap_id = ? 
@@ -48,11 +48,17 @@ export const load: PageServerLoad = async ({ params, platform, locals }) => {
   };
 
   // Check if this is the last material in the module
-  const { results: moduleMaterials } = await platform!.env.DB.prepare(
-    'SELECT id, material_order FROM materials WHERE module_id = ? ORDER BY material_order'
-  ).bind(material.module_id).all();
-  const lastMatOrder = Math.max(...(moduleMaterials as any[]).map((m: any) => m.material_order));
-  const isLastInModule = (material.material_order as number) === lastMatOrder;
+  const nextMaterial = flatMaterials[currentIndex + 1];
+  let isLastInModule = false;
+  if (!nextMaterial) {
+    isLastInModule = true;
+  } else {
+    // We need to know if nextMaterial is in a different module.
+    // flatMaterials doesn't have module_id. Let's fetch it from allMaterials.
+    const currentAllMat = (allMaterials as any[])[currentIndex];
+    const nextAllMat = (allMaterials as any[])[currentIndex + 1];
+    isLastInModule = currentAllMat.module_id !== nextAllMat.module_id;
+  }
 
   // Check if this material's checkpoint is already passed
   const userId = locals.user?.id;

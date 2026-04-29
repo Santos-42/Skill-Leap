@@ -245,4 +245,4 @@
   {/if}
 </div>
 
-<AIChat />
+<AIChat hasActiveRoadmap={hasRoadmaps} />

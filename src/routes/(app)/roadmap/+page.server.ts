@@ -50,6 +50,21 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
     .bind(userId)
     .all();
 
+  // 5c. Fetch latest passed quiz attempt IDs for review links
+  const { results: latestQuizAttempts } = await platform!.env.DB.prepare(
+    `SELECT qa.module_id, qa.id as attempt_id
+     FROM quiz_attempts qa
+     WHERE qa.user_id = ? AND qa.status = 'passed'
+     AND qa.id = (
+       SELECT qa2.id FROM quiz_attempts qa2 
+       WHERE qa2.user_id = qa.user_id AND qa2.module_id = qa.module_id 
+       ORDER BY qa2.submitted_at DESC LIMIT 1
+     )`
+  ).bind(userId).all();
+
+  const quizAttemptMap = new Map<string, string>();
+  (latestQuizAttempts as any[]).forEach(qa => quizAttemptMap.set(qa.module_id, qa.attempt_id));
+
   // 5b. Fetch all passed checkpoints
   const { results: allCheckpoints } = await platform!.env.DB.prepare(
     `SELECT DISTINCT material_id, module_id FROM checkpoint_attempts 
@@ -126,7 +141,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
       quizPassed: quizResult?.passed || false,
       quizScore: quizResult?.score || null,
       lockReason,
-      allCheckpointsPassed
+      allCheckpointsPassed,
+      quizAttemptId: quizAttemptMap.get(mod.id) || null
     };
   });
 
