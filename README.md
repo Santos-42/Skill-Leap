@@ -46,7 +46,7 @@ SkillLeap membuang paradigma bank soal mati. Setiap rintangan soal, kuis, dan st
 Sistem ini dibangun dengan arsitektur _Full-Stack Serverless Edge_ untuk latensi minimal dan performa maksimal:
 
 - **Kerangka Kerja (Framework):** SvelteKit (Svelte 5)
-- **Bahasa Pemrograman:** TypeScript
+- **Bahasa Pemrograman:** Svelte + TypeScript
 - **Styling UI:** Tailwind CSS v4, Lucide Svelte, Svelte Simple Icons
 - **Pangkalan Data (Database):** Cloudflare D1 (Serverless SQLite)
 - **Infrastruktur / Peladen:** Cloudflare Pages & Cloudflare Edge Workers
